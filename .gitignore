@@ -1,11 +1,16 @@
-# Ignore compiled class files
-*.class
+# Ignore Eclipse files
+.classpath
+.project
+.settings/
 
-# Ignore log files
-*.log
-
-# Ignore temporary files
-*.tmp
-
-# Ignore build or bin directories
+# Ignore build folders
 /bin/
+/target/
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore log and temporary files
+*.log
+*.tmp
