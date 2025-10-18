@@ -49,4 +49,53 @@ public class Warehouse {
             }
         }
     }
+ //   Receive shipment (increase stock)
+    public void receiveShipment(String productId, int qty) {
+        try {
+            if (qty <= 0) {
+                throw new IllegalArgumentException("Quantity must be greater than zero.");
+            }
+            Product p = inventory.get(productId);
+            if (p == null) {
+                throw new IllegalArgumentException("Invalid product ID: " + productId);
+            }
+            p.setQuantity(p.getQuantity() + qty);
+            System.out.println("Shipment received for " + p.getName() + " (+ " + qty + ")");
+        } catch (Exception e) {
+            System.err.println("Error in receiveShipment: " + e.getMessage());
+        }
+    }
+
+    // Fulfill customer order (decrease stock)
+    public void fulfillOrder(String productId, int qty) {
+        try {
+            if (qty <= 0) {
+                throw new IllegalArgumentException("Quantity must be greater than zero.");
+            }
+            Product p = inventory.get(productId);
+            if (p == null) {
+                throw new IllegalArgumentException("Invalid product ID: " + productId);
+            }
+            if (p.getQuantity() < qty) {
+                throw new IllegalStateException("Insufficient stock for " + p.getName());
+            }
+
+            // Decrease stock
+            p.setQuantity(p.getQuantity() - qty);
+            System.out.println(" Order fulfilled for " + p.getName() + " (- " + qty + ")");
+
+            //  alert if stock below threshold
+            if (p.getQuantity() < p.getThreshold()) {
+                notifyLowStock(p);
+            }
+        } catch (Exception e) {
+            System.err.println("Error in fulfillOrder: " + e.getMessage());
+        }
+    }
+        // notify low stock method
+        private void notifyLowStock(Product p) {
+            for (StockObserver observer : observers) {
+                observer.onLowStock(p);
+            }
+        }
 }
