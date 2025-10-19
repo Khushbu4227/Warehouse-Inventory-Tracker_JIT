@@ -1,90 +1,75 @@
 package com.jit;
 
-/*import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;*/
 import java.util.*;
-
+import java.io.*;
 
 public class Warehouse {
-// Manage All Products
-	private Map<String, Product> inventory = new HashMap<>();
+    private String warehouseName;
+    private Map<String, Product> inventory = new HashMap<>();
     private List<StockObserver> observers = new ArrayList<>();
+   // constructor for new warehouse
+    public Warehouse(String name) {
+        this.warehouseName = name;
+        System.out.println("Warehouse created: " + warehouseName);
+    }
 
-    //  Register observer (AlertService)
+    //Register Observer
     public void registerObserver(StockObserver observer) {
-        if (observer != null) {
-            observers.add(observer);
-        } else {
-            System.err.println("Cannot register a null observer!");
+        if (observer == null) {
+            System.err.println("Cannot register null observer!");
+            return;
         }
+        observers.add(observer);
     }
 
-    //  Add product with validation
+    // Add product in inventory 
     public void addProduct(Product p) {
-        try {
-            if (p == null) {
-                throw new NullPointerException("Product cannot be null while adding to warehouse!");
-            }
-            if (inventory.containsKey(p.getId())) {
-                System.out.println("Product with ID " + p.getId() + " already exists.");
-            } else {
-                inventory.put(p.getId(), p);
-                System.out.println("✅ Product added: " + p.getName());
-            }
-        } catch (Exception e) {
-            System.err.println("Error while adding product: " + e.getMessage());
+        if (p == null) return;
+        if (inventory.containsKey(p.getId())) {
+            System.out.println("⚠️ Product already exists.");
+        } else {
+            inventory.put(p.getId(), p);
+            System.out.println("✅ Product added in " + warehouseName + ": " + p.getName());
         }
     }
 
-    //  Simple inventory list
+    // Show all products 
     public void showAllProducts() {
+        System.out.println("\n Inventory of " + warehouseName + ":");
         if (inventory.isEmpty()) {
-            System.out.println("No products in warehouse.");
+            System.out.println("   (No products yet)");
         } else {
-            System.out.println("📦 Current Inventory:");
             for (Product p : inventory.values()) {
                 System.out.println("   " + p);
             }
         }
     }
- //   Receive shipment (increase stock)
+
+    // Receive shipment
     public void receiveShipment(String productId, int qty) {
         try {
-            if (qty <= 0) {
-                throw new IllegalArgumentException("Quantity must be greater than zero.");
-            }
+            if (qty <= 0) throw new IllegalArgumentException("Quantity must be > 0");
             Product p = inventory.get(productId);
-            if (p == null) {
-                throw new IllegalArgumentException("Invalid product ID: " + productId);
-            }
+            if (p == null) throw new IllegalArgumentException("Invalid Product ID: " + productId);
             p.setQuantity(p.getQuantity() + qty);
-            System.out.println("Shipment received for " + p.getName() + " (+ " + qty + ")");
+            System.out.println(" Shipment received for " + p.getName() + " (+ " + qty + ")");
         } catch (Exception e) {
             System.err.println("Error in receiveShipment: " + e.getMessage());
         }
     }
 
-    // Fulfill customer order (decrease stock)
+    // Fulfill Order 
     public void fulfillOrder(String productId, int qty) {
         try {
-            if (qty <= 0) {
-                throw new IllegalArgumentException("Quantity must be greater than zero.");
-            }
+            if (qty <= 0) throw new IllegalArgumentException("Quantity must be > 0");
+            
             Product p = inventory.get(productId);
-            if (p == null) {
-                throw new IllegalArgumentException("Invalid product ID: " + productId);
-            }
-            if (p.getQuantity() < qty) {
-                throw new IllegalStateException("Insufficient stock for " + p.getName());
-            }
+            if (p == null) throw new IllegalArgumentException("Invalid Product ID: " + productId);
+            if (p.getQuantity() < qty) throw new IllegalStateException("Insufficient stock for " + p.getName());
 
-            // Decrease stock
             p.setQuantity(p.getQuantity() - qty);
             System.out.println(" Order fulfilled for " + p.getName() + " (- " + qty + ")");
 
-            //  alert if stock below threshold
             if (p.getQuantity() < p.getThreshold()) {
                 notifyLowStock(p);
             }
@@ -92,10 +77,46 @@ public class Warehouse {
             System.err.println("Error in fulfillOrder: " + e.getMessage());
         }
     }
-        // notify low stock method
-        private void notifyLowStock(Product p) {
-            for (StockObserver observer : observers) {
-                observer.onLowStock(p);
-            }
+
+    // Notify low stock
+    private void notifyLowStock(Product p) {
+        for (StockObserver observer : observers) {
+            observer.onLowStock(p);
         }
+    }
+
+    //  Save inventory to file
+    public void saveInventoryToFile(String filename) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
+            for (Product p : inventory.values()) {
+                writer.write(p.getId() + "," + p.getName() + "," + p.getQuantity() + "," + p.getThreshold());
+                writer.newLine();
+            }
+            System.out.println(" Inventory saved to file: " + filename);
+        } catch (IOException e) {
+            System.err.println("Error saving inventory: " + e.getMessage());
+        }
+    }
+
+    //  Load inventory from file
+    public void loadInventoryFromFile(String filename) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+            inventory.clear(); // remove old data
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts.length == 4) {
+                    Product p = new Product(parts[0], parts[1], Integer.parseInt(parts[2]), Integer.parseInt(parts[3]));
+                    inventory.put(p.getId(), p);
+                }
+            }
+            System.out.println(" Inventory loaded from file: " + filename);
+        } catch (IOException e) {
+            System.err.println("Error loading inventory: " + e.getMessage());
+        }
+    }
+
+    public String getWarehouseName() {
+        return warehouseName;
+    }
 }
