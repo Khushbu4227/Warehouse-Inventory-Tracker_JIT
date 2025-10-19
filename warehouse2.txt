@@ -1,1 +1,2 @@
 P02,Mobile,1,2
+103,Laptop,2,5
